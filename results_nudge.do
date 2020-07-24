@@ -6,7 +6,7 @@
 *:::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 clear all
-cd "/Users/mrfreerider/Documents/Research/Social Nudge/Project/Results"
+cd "/Users/mrfreerider/Documents/Research/Spreading the word/Project/Results"
 import excel "database_complete.xlsx", firstrow
 
 *** Village identificator (villid)
