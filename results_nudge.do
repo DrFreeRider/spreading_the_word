@@ -241,11 +241,16 @@ egen time_ses = group(time ses) // Time & SES
 
 
 *************************************************
-*************************************************
 ** Saving data frame in txt file
+*************************************************
+drop id street_port year month norm_cf norm cons
 
-save "/Users/mrfreerider/Documents/Research/Social Nudge/Paper/data_exp_merged.dta", replace
-export delimited using "/Users/mrfreerider/Documents/Research/Social Nudge/Paper/data_exp_merged.csv",nolabel replace
+save "~/Documents/GitHub/spreading_the_word/data_adjusted.dta", replace
+
+export delimited using "~/Documents/GitHub/spreading_the_word/data_adjusted.csv",nolabel replace
+
+
+
 
 **********************************************
 **********************************************
