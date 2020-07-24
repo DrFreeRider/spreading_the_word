@@ -6,7 +6,7 @@
 *:::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 clear all
-cd "/Users/mrfreerider/Documents/Research/Spreading the word/Project/Results"
+cd "~/Documents/Research/Spreading the word/Project/Results"
 import excel "database_complete.xlsx", firstrow
 
 *** Village identificator (villid)
@@ -62,18 +62,18 @@ label values status status
 ******************************************************
 ** Socioeconomic strata distribution (SES)
 ******************************************************
-tabout ses village using "/Users/mrfreerider/Documents/Research/Social Nudge/Project/Results/tabs and graphs/strata_dist.tex", cells(col) format(1) clab(%) ///
-replace style(tex) botstr(Local water managers 2017)
+tabout ses village using "~/Documents/GitHub/spreading_the_word/ses_distribution.tex", cells(col) format(1) clab(%) replace style(tex) botstr(Local water managers 2017)
 
 ******************************************************
 ** Differences in mean between HHS 
 ******************************************************
 
 //Directly vs indirectly 
+
 eststo clear
 estpost ttest cons201701 cons201702 cons201703 cons201704 cons201705 ///
  cons201706 cons201707 ses if control==0, by(d_treated) unequal
-esttab using "/Users/mrfreerider/Documents/Research/Social Nudge/Project/Results/tabs and graphs/diff_cons_hhs_dvsi.tex", replace label booktabs nomtitle nonumbers ///
+esttab using "~/Documents/Research/Spreading the word/Project/Results/tabs and graphs/diff_cons_hhs_dvsi.tex", replace label booktabs nomtitle nonumbers ///
  cell("mu_1(label(Mean Directly) fmt(a1)) mu_2(label(Mean Indirectly) fmt(a1)) se(label(SD) fmt(a1)) b(label(Diff.) star fmt(a2))  t(label(t-stat) fmt(a2))") ///
  coeflabel( cons201701 "Jan 2017" cons201701 "Feb 2017" cons201703 "Mar 2017" cons201704 "Apr 2017" cons201705 "May 2017" cons201706 "Jun 2017" cons201707 "Jul 2017" ses "Socioeconomic Strata")
 
@@ -81,7 +81,7 @@ esttab using "/Users/mrfreerider/Documents/Research/Social Nudge/Project/Results
 eststo clear
 estpost ttest cons201701 cons201702 cons201703 cons201704 cons201705 ///
 cons201706 cons201707 ses, by(control) unequal
-esttab using "/Users/mrfreerider/Documents/Research/Social Nudge/Project/Results/tabs and graphs/diff_cons_hhs__tvsc.tex",  replace label booktabs nomtitle nonumbers  ///
+esttab using "~/Documents/Research/Spreading the word/Project/Results/tabs and graphs/diff_cons_hhs__tvsc.tex",  replace label booktabs nomtitle nonumbers  ///
 cell("mu_1(label(Mean Treated) fmt(a1)) mu_2(label(Mean  Control) fmt(a1)) se(label(SD) fmt(a1)) b(label(Diff.) star fmt(a2))  t(label(t-stat) fmt(a2))") ///
  coeflabel( cons201701 "Jan 2017" cons201701 "Feb 2017" cons201703 "Mar 2017" cons201704 "Apr 2017" cons201705 "May 2017" cons201706 "Jun 2017" cons201707 "Jul 2017" ses "Socioeconomic Strata")
 
@@ -168,17 +168,6 @@ replace negative=0  if (cons_daily-norm_daily_cf<=0)
 label var negative "Negative feedback"
 replace negative=. if dist_norm==.
 
-** Compliance to norm (1 if hh reduces contemporary consumption respect to the sns from the previous period)
-
-sort  hh period
-gen comply=1 if (cons_daily-L.norm_daily_cf<=0) 
-replace comply=0 if (cons_daily-L.norm_daily_cf>0) 
-replace comply=. if dist_norm==.
-label var comply "Compliance with previous sns"
-
-gen rate_comply  = (cons_daily-L.norm_daily_cf) / cons_daily
-
-
 
 *************************************************
 ** Standardized water consumption by status
@@ -235,12 +224,12 @@ label var indirect_sat "Spillover by Saturation"
 label values indirect_sat sat
 
 gen saturation = 0
-replace saturation = 0.25 if villageid==8 
-replace saturation = 0.25 if villageid==6 
-replace saturation = 0.5 if villageid==7 
-replace saturation = 0.5 if villageid==2 
-replace saturation = 0.75 if villageid==3 
-replace saturation = 0.75  if villageid==1
+replace saturation = 0.25 if village==8 
+replace saturation = 0.25 if village==6 
+replace saturation = 0.5 if village==7 
+replace saturation = 0.5 if village==2 
+replace saturation = 0.75 if village==3 
+replace saturation = 0.75  if village==1
 label var saturation "Level of Saturation"
 
 *************************************************
@@ -248,6 +237,7 @@ label var saturation "Level of Saturation"
 *************************************************
 egen time_village = group(time village) // Time & village
 egen time_street = group(time street) // Time & Street
+egen time_ses = group(time ses) // Time & SES
 
 
 *************************************************
