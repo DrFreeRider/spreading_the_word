@@ -43,7 +43,7 @@ cell("mu_1(label(Mean Treated) fmt(a1)) mu_2(label(Mean  Control) fmt(a1)) se(la
 cd "/Users/mrfreerider/Documents/Research/Spreading the word/Project/Results/tabs and graphs"
 
 *******************************************
-** Preliminar Figures 
+** Graphs 
 *******************************************
 
 *** Preliminar Graphs (Hist, consumption)
@@ -55,34 +55,27 @@ do "preliminar_graphs.do"
 * Checking the prallel trends assumption between groups
 do "parallel trends checking.do"
 
-
 *******************************************
 ** Sum stat by status only and by billing frequency 
 *******************************************
 *** Summary statistics between tratment status and by billing groups
-//do "summary_stat.do"
+
+do "summary_stat.do"
 
 
 *******************************************
-** R E G R E S S I O N S  
+** Regressions 
 *******************************************
+** Pooled and sloped model
+do "reg_aggregate_slope.do" 
+// This includes regressions of both models and plot the coefficients.
 
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-** Regressions pooled and sloped model
-do "reg_aggregate_slope.do" // This includes regressions of both models and plot the coefficients.
-
-
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-** Regressions pooled and sloped model by BILLING
-
+** Pooled and sloped model by Billing Frequency
 do "reg_bill_freq.do"
 
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-** Regressions pooled and sloped model over time
-
+** Pooled and sloped model over time
 do "reg_evol_model.do"
 
-*%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ** Regressions pooled and sloped model by
 ** type of consumer
 
