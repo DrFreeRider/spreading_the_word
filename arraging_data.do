@@ -174,25 +174,30 @@ label var cons_std_vill "Water consumption (Std.Village)"
 **  Saturation per village ID
 *************************************************
 gen direct_sat = 0
-replace direct_sat = 1 if village==8 & d_treated==1 // 25%
-replace direct_sat = 1 if village==6 & d_treated==1 // 25%
-replace direct_sat = 2 if village==7 & d_treated==1 // 50%
-replace direct_sat = 2 if village==2 & d_treated==1 // 50%
-replace direct_sat = 3 if village==3 & d_treated==1 // 75%
-replace direct_sat = 3  if village==1 & d_treated==1 // 75%
+replace direct_sat = 1 if village==8 & d_treated==1 & post==1 // 25%
+replace direct_sat = 1 if village==6 & d_treated==1 & post==1 // 25%
+replace direct_sat = 2 if village==7 & d_treated==1 & post==1 // 50%
+replace direct_sat = 2 if village==2 & d_treated==1 & post==1 // 50%
+replace direct_sat = 3 if village==3 & d_treated==1 & post==1 // 75%
+replace direct_sat = 3  if village==1 & d_treated==1 & post==1 // 75%
 label var direct_sat "Treated by Saturation"
 label define sat 1 "25\%" 2 "50\%" 3 "75\%"
 label values direct_sat sat
 
+tab direct_sat, gen(d_sat)
+
+
 gen indirect_sat = 0
-replace indirect_sat = 1 if village== 8 & i_treated== 1 // 25%
-replace indirect_sat = 1 if village== 6 & i_treated== 1 // 25%
-replace indirect_sat = 2 if village== 7 & i_treated== 1 // 50%
-replace indirect_sat = 2 if village== 2 & i_treated== 1 // 50%
-replace indirect_sat = 3 if village== 3 & i_treated== 1 // 75%
-replace indirect_sat = 3 if village== 1 & i_treated== 1 // 75%
+replace indirect_sat = 1 if village== 8 & i_treated== 1 & post==1 // 25%
+replace indirect_sat = 1 if village== 6 & i_treated== 1 & post==1 // 25%
+replace indirect_sat = 2 if village== 7 & i_treated== 1 & post==1 // 50%
+replace indirect_sat = 2 if village== 2 & i_treated== 1 & post==1 // 50%
+replace indirect_sat = 3 if village== 3 & i_treated== 1 & post==1 // 75%
+replace indirect_sat = 3 if village== 1 & i_treated== 1 & post==1 // 75%
 label var indirect_sat "Spillover by Saturation"
 label values indirect_sat sat
+
+tab indirect_sat, gen(i_sat)
 
 gen saturation = 0
 replace saturation = 0.25 if village==8 
@@ -210,11 +215,46 @@ egen time_village = group(time village) // Time & village
 egen time_street = group(time street) // Time & Street
 egen time_ses = group(time ses) // Time & SES
 
+egen month_year = group(month year) // month & year
+
+egen month_ses = group(month ses)
+egen year_ses = group(month ses)
+*************************************************
+** Consumption Outliers
+*************************************************
+bys village time: egen p75=  pctile(cons_daily), p(75)
+bys village time: egen p25=  pctile(cons_daily), p(25)
+gen ric = p75 - p25
+gen riul =  p75+(1.5*ric)
+gen outlier = 1 if cons_daily > riul
+replace outlier=. if cons_daily==.
+replace outlier=0 if outlier==.
+
+
+*************************************************
+** Adjunting Consumption
+*************************************************
+
+// The water consumption is normalized by dividing it into the average post-treatment control group consumption and multiplying by 100
+
+egen cons_cont=mean(cons_daily), by(post control)
+replace cons_cont=. if control==0
+replace cons_cont=. if post==0
+replace cons_cont=. if post==.
+
+sort hh time
+gen cons_control = cons_cont
+replace cons_control = cons_cont[21] if missing(cons_cont)
+drop cons_cont
+
+gen cons_adj = (cons_daily/cons_control)*100
+
+label var cons_adj "Normalized consumption"
 
 *************************************************
 ** Saving data frame in txt file
 *************************************************
-drop id street_port year month norm_cf norm cons
+drop id street_port  norm_cf norm cons
 
 save "~/Documents/GitHub/spreading_the_word/data_adjusted.dta", replace
 

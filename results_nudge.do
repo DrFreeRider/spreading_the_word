@@ -1,5 +1,5 @@
 *:::::::::::::::::::::::::::::::::::::::::::::::::::::::
-* Spreading the word!
+* Paper: Spreading the word!
 * Initial analysis of data and adjusment
 * Author: Jose David Lopez-Rivas
 * Last modification: 23/07/2020 
@@ -9,6 +9,37 @@
 clear all
 cd "~/Documents/GitHub/spreading_the_word"
 use "data_adjusted.dta", clear 
+
+
+preserve
+gen time_sem=.
+replace time_sem = 1 if time >= 3
+replace time_sem = 2 if time >= 9
+replace time_sem = 3 if time >= 15
+replace time_sem = 4 if time >= 21
+
+bys hh time_sem: egen cons_sem=mean(cons_daily)
+bys hh time_sem: egen norm_sem=mean(norm_daily_cf)
+bys hh time_sem: egen d_norm_sem=mean(dist_norm)
+bys hh time_sem: egen positive_sem=mean(positive)
+
+
+keep hh ses bill village street street_village ses_village d_treated i_treated control total_neigh treated_neigh status direct_sat time_sem cons_sem norm_sem d_norm_sem positive_sem
+
+drop if time_sem==.
+
+sort hh time_sem
+quietly by hh time_sem: gen dup = cond(_N==1,0,_n)
+drop if dup>1
+drop dup 
+
+gen post=0
+replace post=1 if time_sem==4
+
+save "~/Documents/GitHub/spreading_the_word/data_sem.dta", replace
+restore
+
+use "~/Documents/GitHub/spreading_the_word/data_sem.dta", clear 
 
 
 ******************************************************
@@ -39,33 +70,31 @@ cell("mu_1(label(Mean Treated) fmt(a1)) mu_2(label(Mean  Control) fmt(a1)) se(la
 
  
 **********************************************
-**********************************************
 cd "/Users/mrfreerider/Documents/Research/Spreading the word/Project/Results/tabs and graphs"
 
 *******************************************
-** Graphs 
+** Summay Stats and Graphs
 *******************************************
 
-*** Preliminar Graphs (Hist, consumption)
+*** Summary statistics between tratment status and by billing groups
+do "summary_stat.do"
+
+** Graphs 
 do "preliminar_graphs.do"
+
 
 *******************************************
 ** Parallel trends checking 
 *******************************************
-* Checking the prallel trends assumption between groups
+** Checking the prallel trends assumption between groups
+
 do "parallel trends checking.do"
-
-*******************************************
-** Sum stat by status only and by billing frequency 
-*******************************************
-*** Summary statistics between tratment status and by billing groups
-
-do "summary_stat.do"
 
 
 *******************************************
 ** Regressions 
 *******************************************
+
 ** Pooled and sloped model
 do "reg_aggregate_slope.do" 
 // This includes regressions of both models and plot the coefficients.
