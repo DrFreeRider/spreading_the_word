@@ -22,7 +22,7 @@ label var hh "Household"
 
 *** Street Identificator
 egen street=group(street_port)
-label var street "Street Identificator"
+label var street "Street identificator"
 
 *** Street and village identificator 
 egen street_village= group(street village)
@@ -215,10 +215,15 @@ egen time_village = group(time village) // Time & village
 egen time_street = group(time street) // Time & Street
 egen time_ses = group(time ses) // Time & SES
 
-egen month_year = group(month year) // month & year
+egen time_ses_village = group(time ses village) // Time & SES
 
+egen month_year = group(month year) // month & year
 egen month_ses = group(month ses)
 egen year_ses = group(month ses)
+egen month_street = group(month street)
+
+
+
 *************************************************
 ** Consumption Outliers
 *************************************************

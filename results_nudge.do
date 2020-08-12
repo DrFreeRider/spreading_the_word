@@ -11,37 +11,6 @@ cd "~/Documents/GitHub/spreading_the_word"
 use "data_adjusted.dta", clear 
 
 
-preserve
-gen time_sem=.
-replace time_sem = 1 if time >= 3
-replace time_sem = 2 if time >= 9
-replace time_sem = 3 if time >= 15
-replace time_sem = 4 if time >= 21
-
-bys hh time_sem: egen cons_sem=mean(cons_daily)
-bys hh time_sem: egen norm_sem=mean(norm_daily_cf)
-bys hh time_sem: egen d_norm_sem=mean(dist_norm)
-bys hh time_sem: egen positive_sem=mean(positive)
-
-
-keep hh ses bill village street street_village ses_village d_treated i_treated control total_neigh treated_neigh status direct_sat time_sem cons_sem norm_sem d_norm_sem positive_sem
-
-drop if time_sem==.
-
-sort hh time_sem
-quietly by hh time_sem: gen dup = cond(_N==1,0,_n)
-drop if dup>1
-drop dup 
-
-gen post=0
-replace post=1 if time_sem==4
-
-save "~/Documents/GitHub/spreading_the_word/data_sem.dta", replace
-restore
-
-use "~/Documents/GitHub/spreading_the_word/data_sem.dta", clear 
-
-
 ******************************************************
 ** Summary statistics
 ******************************************************
