@@ -2,48 +2,44 @@
 * Spreading the word!
 * Initial analysis of data and adjusment
 * Author: Jose David Lopez-Rivas
-* Last modification: 23/07/2020 
 *:::::::::::::::::::::::::::::::::::::::::::::::::::::::
 clear all
-cd "~/Documents/Research/Spreading the word/Project/Results"
+cd "~/Documents/Research/Spreading the word/Results"
 import excel "database_complete.xlsx", firstrow
 
-*** Village identificator (villid)
-egen vill = group(village), label
-drop village
-rename vill village
-label define villages 1 "Mo 75" 2 "Bi 50" 3 "Bi 75" 4 "Bi 0" 5 "Mo 0" 6 "Bi 25" 7 "Mo 50" 8 "Mo 25"
-label values village villages
-label var village "Village"
-
-*** Households Identificator (hhid)
+********************************************************
+*** Households identificator (HH)
 gen hh=_n 
 label var hh "Household"
 
+*** Village identificator
+egen vill = group(village), label
+drop village
+rename vill village
+
 *** Street Identificator
 egen street=group(street_port)
-label var street "Street identificator"
+label var street "Street"
 
-*** Street and village identificator 
+*** Street & village identificator 
 egen street_village= group(street village)
-label var street_village "Street and village"
+label var street_village "Street & Village"
 
-*** SES and village identificator
+*** SES & village identificator
 rename strata ses
 label var ses "Socioeconomic strata"
 sort ses village
 egen ses_village = group(ses village)
-label var ses_village "ses and village"
-
+label var ses_village "SES & Village"
 
 *** Variables labels
-label var bill "Billing frequency"
-label define bill 0 "Monthly" 1 "Bimonthly"
+label var bill "Frequency"
+label define bill 0 "30 days" 1 "60 days"
 label values bill bill
 
 rename treated d_treated
-label var d_treated "Direclty"
-label define d_treated 0 "Not directly" 1 "Direclty"
+label var d_treated "Directly treated"
+label define d_treated 0 "Not direct" 1 "Direct"
 label values d_treated d_treated
 
 rename spill i_treated
@@ -54,8 +50,15 @@ label values i_treated i_treated
 label var control "Control"
 
 label var status "Treatment status"
-label define status 1 "Control" 2 "Spillovers" 3 "Directly"
+label define status 1 "Control" 2 "Spillover" 3 "Directly"
 label values status status
+
+label define village 1 "A" 2 "B" 3 "C" 4 "D" 5 "E" 6 "F" 7 "G" 8 "H"
+label values village village
+label var village "Village"
+
+label define saturation_bill 1 "30(75%)" 2 "60(50%)" 3 "60(75%)" 4 "60(0%)" 5 "30(0%)" 6 "60(25%)" 7 "30(50%)" 8 "30(25%)"
+
 
 *************************************************
 ** Setting the panel data 
@@ -71,7 +74,7 @@ drop m
 gen period=ym(year, month)
 format period %tm
 
-label var cons "Water consuption (m3)"
+label var cons "Consumption (m3)"
 label var period "Month"
 label var above "Above social norm"
 label var norm "Social norm standard"
@@ -79,39 +82,51 @@ label var norm "Social norm standard"
 sort hh period
 xtset hh period
 
-** Time variables and post treatment (post)
+*################################################
+* Time and post treatment variables
 bys hh: generate time=_n
 label var time "Time" // Time indicator
 
-gen time_ad = time-20
-label var time_ad "Time" // Time normalized
+// Time normalized where 0 represents September 2017. 
+gen time_ad = time-21
+label var time_ad "Time" 
 
-gen post=1 if time>20 // After August
-replace post=0 if post==.
+// Treatment started in september 2019. The "30 days" group received 5 deliveries every month (until january 2018). The "60 days" group received 3 message deliveries (until january-febreuary 2018).
+
+gen post=(time>20)
 label var post "Post"
 label define post 0 "Before" 1 "After"
+
 label value post post
+//replace post=. if time>25 & bill==0 // Removing treatment last period for the "30 days"
 
-replace post=. if time>25 & bill==0 // After january for the monthyl group
-
-** Interaction of treated and post variable
+** Interaction for the treatment status and post variable. 
 gen d_post= d_treated*post 
-label var d_post "Directly x Post"
+label var d_post "Direct"
 gen i_post= i_treated*post
-label var i_post "Indirectly x Post"
+label var i_post "Spillover"
 
+*################################################
+* Consumption Variable
 
-** HH Consumption in liters per day
-replace cons=. if cons==0
+** Consumption in liters per day (First, I treat the zero consumption as missing. Zero consumtpion represents an epty household)
+
+replace cons=. if cons==0 // Replacing 
 gen cons_daily= (cons/30)*1000 if bill==0
 replace cons_daily=(cons/60)*1000 if bill==1
 label var cons_daily "Liters per day"
 
-** Social Norm standard variable (Average consumption per ses, village and time)
-replace norm=. if norm==0
+*################################################
+** Social Norm standard variable
+replace norm=. if norm==0 
+gen norm_daily = (norm/30)*1000 if bill==0
+replace norm_daily =(norm/60)*1000 if bill==1
 
-bys ses village period: egen norm_cf = mean(cons) // Generating the coounterfactual of the norm for pretreatment
+label var norm_daily "Social norm"
 
+** Generating a counterfactual of the social norm (at pre-treatment and for the control group). Average consumption by SES, village and time.
+bys ses village time: egen norm_cf = mean(cons)
+label var norm_cf "Social norm (counterfactual)"
 replace norm_cf=norm if time==20
 replace norm_cf=norm if time==21
 replace norm_cf=norm if time==22
@@ -120,93 +135,180 @@ replace norm_cf=norm if time==24
 
 gen norm_daily_cf =(norm_cf/30)*1000 if bill==0
 replace norm_daily_cf=(norm_cf/60)*1000 if bill==1
-label var norm_daily_cf "Social norm (L/day)"
+label var norm_daily_cf "Social norm (counterfactual)"
 
-** Distance to social norm standard (Difference between consumption minus sns)
-sort hh period
-gen dist_norm = cons_daily-norm_daily_cf
-label var dist_norm "Distance to sns (L/day)"
+** Distance to social norm (Difference between consumption minus SNS)
+sort hh time
+gen dist_norm = (cons_daily - norm_daily)
+label var dist_norm "Difference (L/day)"
 
-** positive feedback (1 if hhs consumes below or equal to the sns in the social comparison)
-gen positive=1 if (cons_daily-norm_daily_cf<=0)
-replace positive=0  if (cons_daily-norm_daily_cf>0)
-label var positive "Positive feedback"
+** Approval feedback (1 if hhs consumption is below or equal to the SN)
+
+gen  positive=(cons_daily-norm_daily<=0)
+label var positive "Approval feedback"
 replace positive=. if dist_norm==.
 
-** Negative feedback (1 if hhs consumes above the sns in the social comparison)
-gen negative=1 if (cons_daily-norm_daily_cf>0) 
-replace negative=0  if (cons_daily-norm_daily_cf<=0)
-label var negative "Negative feedback"
+** Disapproval feedback (1 if hhs consumes above the sns in the social comparison)
+
+gen negative=(cons_daily-norm_daily>0) 
+label var negative "Disapproval feedback"
 replace negative=. if dist_norm==.
 
 
 *************************************************
-** Standardized water consumption by status
+** Change consumption before and after by status
 *************************************************
-
-bys period status: egen cons_avg=mean(cons_daily) // Average per period and status
-bys period status: egen cons_sd=sd(cons_daily) // Std. deviations per period and status
-gen cons_std=(cons_daily-cons_avg)/cons_sd // WC standardized
-label var cons_std "Water consumption (Std.)"
 
 ** Average water consumption before and after by status
-bys hh: egen cons_bt=mean(cons_daily) if time<=20 // Consumption before treatment
-label var cons_bt "Water consumption Before" 
-bys hh: egen cons_at=mean(cons_daily) if time>20 // Consumption after treatment
-label var cons_at "Water consumption After"
-bys hh: egen prom_cons_bt = mean(cons_bt)  // Average Consumption before treatment
-label var prom_cons_bt "Avg. water consumption Before"
-bys hh: egen prom_cons_at = mean(cons_at) // Average Consumption after treatment
-label var prom_cons_at "Avg. water consumption After"
-bys hh: gen ch_cons =  prom_cons_at-prom_cons_bt // Cange in average water consumptio
-label var ch_cons "Change in water consumption" 
+sort hh period
+bys hh: egen prom_cons_bt=mean(cons_daily) if time<=20 // Consumption before treatment
+bys hh: egen prom_cons_at=mean(cons_daily) if time>20 // Consumption after treatment
+
+bys hh: egen cons_bt = mean(prom_cons_bt)  // Average Consumption before treatment
+label var cons_bt "Consumption Before" 
+bys hh: egen cons_at = mean(prom_cons_at) // Average Consumption after treatment
+label var cons_at "Consumption After"
+
+bys hh: gen ch_cons =  cons_at-cons_bt // Average change in  consumption.
+label var ch_cons "Change consumption" 
+
+drop prom_cons_bt prom_cons_at
 
 *************************************************
-** Standardized water consumption by village
+** Normalized Consumption
 *************************************************
-bys period village: egen avg_cons_vill=mean(cons_daily) // Average per period and village
-bys period village: egen sd_cons_vill=sd(cons_daily) // Std. deviations per period and village
-gen cons_std_vill=(avg_cons_vill-sd_cons_vill)/sd_cons_vill //  standardized consumption
-label var cons_std_vill "Water consumption (Std.Village)"
+** The water consumption is normalized by dividing it into the average post-treatment control group consumption and multiplying by 100.
+egen cons_cont=mean(cons_daily), by(post status)
+replace cons_cont=. if post==1
+replace cons_cont=. if control==0
+replace cons_cont=. if post==.
+replace cons_cont = cons_cont[2] if missing(cons_cont)
+label var cons_cont "Average control at baseline"
+
+sort hh time
+gen cons_adj = (cons_daily/cons_cont)*100
+label var cons_adj "Normalized consumption"
 
 
 *************************************************
-**  Saturation per village ID
+**  Saturation Variables
 *************************************************
-gen direct_sat = 0
-replace direct_sat = 1 if village==8 & d_treated==1 & post==1 // 25%
-replace direct_sat = 1 if village==6 & d_treated==1 & post==1 // 25%
-replace direct_sat = 2 if village==7 & d_treated==1 & post==1 // 50%
-replace direct_sat = 2 if village==2 & d_treated==1 & post==1 // 50%
-replace direct_sat = 3 if village==3 & d_treated==1 & post==1 // 75%
-replace direct_sat = 3  if village==1 & d_treated==1 & post==1 // 75%
-label var direct_sat "Treated by Saturation"
-label define sat 1 "25\%" 2 "50\%" 3 "75\%"
-label values direct_sat sat
-
-tab direct_sat, gen(d_sat)
-
-
-gen indirect_sat = 0
-replace indirect_sat = 1 if village== 8 & i_treated== 1 & post==1 // 25%
-replace indirect_sat = 1 if village== 6 & i_treated== 1 & post==1 // 25%
-replace indirect_sat = 2 if village== 7 & i_treated== 1 & post==1 // 50%
-replace indirect_sat = 2 if village== 2 & i_treated== 1 & post==1 // 50%
-replace indirect_sat = 3 if village== 3 & i_treated== 1 & post==1 // 75%
-replace indirect_sat = 3 if village== 1 & i_treated== 1 & post==1 // 75%
-label var indirect_sat "Spillover by Saturation"
-label values indirect_sat sat
-
-tab indirect_sat, gen(i_sat)
-
-gen saturation = 0
-replace saturation = 0.25 if village==8 
-replace saturation = 0.25 if village==6 
-replace saturation = 0.5 if village==7 
-replace saturation = 0.5 if village==2 
-replace saturation = 0.75 if village==3 
-replace saturation = 0.75  if village==1
+gen saturation = 1
+replace saturation = 2 if village==8 
+replace saturation = 2 if village==6 
+replace saturation = 3 if village==7 
+replace saturation = 3 if village==2 
+replace saturation = 4 if village==3 
+replace saturation = 4  if village==1
 label var saturation "Level of Saturation"
+
+** Variables of treatment x saturation x post
+gen d_sat1=0 
+replace d_sat1=1 if saturation==2 & d_post==1
+replace d_sat1=. if post==.
+
+gen d_sat2=0 
+replace d_sat2=1 if saturation==3 & d_post==1
+replace d_sat2=. if post==.
+
+gen d_sat3=0 
+replace d_sat3=1 if saturation==4 & d_post==1
+replace d_sat3=. if post==.
+
+gen i_sat1=0 
+replace i_sat1=1 if saturation==2 & i_post==1
+replace i_sat1=. if post==.
+
+gen i_sat2=0 
+replace i_sat2=1 if saturation==3 & i_post==1
+replace i_sat2=. if post==.
+
+gen i_sat3=0 
+replace i_sat3=1 if saturation==4 & i_post==1
+replace i_sat3=. if post==.
+
+
+** Billing frequency indicators
+gen post_bill = 0
+replace post_bill = 1 if post == 1 & bill == 1
+label var post_bill "Post X Billing"
+gen d_post_bill1 = 0
+replace d_post_bill1 = 1 if d_post == 1 & bill == 0
+label var d_post_bill1 "Direct X Monthly"
+gen d_post_bill2 = 0
+replace d_post_bill2 = 1 if d_post == 1 & bill == 1
+label var d_post_bill2 "Direct X Bimonthly"
+gen i_post_bill1=0
+replace i_post_bill1=1 if i_post==1 & bill==0
+label var i_post_bill1 "Spillover X  Monthly"
+gen i_post_bill2=0
+replace i_post_bill2=1 if i_post==1 & bill==1
+label var i_post_bill2 "Spillover X Bimonthly"
+
+** Billing frequency and saturation indicators
+gen direct_satbill = 0
+replace direct_satbill = 1 if saturation==2 & d_treated==1 & post==1 & bill==0 // 25%
+replace direct_satbill = 2 if saturation==3 & d_treated==1 & post==1 & bill==0 // 50%
+replace direct_satbill = 3  if saturation==4 & d_treated==1 & post==1 & bill==0 // 75%
+
+replace direct_satbill = 4 if saturation==2 & d_treated==1 & post==1 & bill==1 // 25%
+replace direct_satbill = 5 if saturation==3 & d_treated==1 & post==1 & bill==1 // 50%
+replace direct_satbill = 6 if saturation==4 & d_treated==1 & post==1 & bill==1 // 75%
+label var direct_satbill "Treated by Saturation"
+tab direct_satbill, gen(d_sat_bill)
+
+
+gen indirect_satbill = 0
+replace indirect_satbill = 1 if saturation== 2 & i_treated== 1 & post==1 & bill==0 // 25%
+replace indirect_satbill = 2 if saturation== 3 & i_treated== 1 & post==1 & bill==0 // 50%
+replace indirect_satbill = 3 if saturation== 4 & i_treated== 1 & post==1 & bill==0 // 75%
+replace indirect_satbill = 4 if saturation== 2 & i_treated== 1 & post==1 & bill==1 // 25%
+replace indirect_satbill = 5 if saturation== 3 & i_treated== 1 & post==1 & bill==1 // 50%
+replace indirect_satbill = 6 if saturation== 4 & i_treated== 1 & post==1 & bill==1 // 75%
+label var indirect_satbill "Spillover by Saturation"
+tab indirect_satbill, gen(i_sat_bill)
+
+*************************************************
+** Collapsing two-months variables
+*************************************************
+gen time_bi=0
+forval j = 1(1)13{
+	replace time_bi= `j' if  time <=(`j'*2) & time > (`j'*2)-2
+}
+label var time_bi "Time"
+
+** Aggregate consumption (two months)
+bys hh time_bi: egen cons_bi = sum(cons)
+replace cons_bi=. if cons_bi==0
+
+** Daily consumption (two months)
+gen cons_daily_bi=(cons_bi/60)*1000 
+replace cons_daily_bi=. if cons_daily_bi==0
+
+** Normalized consumption (two months)
+//bys hh time_bi: egen cons_adj_bi = sum(cons_adj)
+//replace cons_adj_bi=. if cons_adj_bi==0
+
+egen cons_cont_bin=mean(cons_daily_bi), by(post status)
+replace cons_cont_bin=. if post==1
+replace cons_cont_bin=. if control==0
+replace cons_cont_bin=. if post==.
+replace cons_cont_bin = cons_cont_bin[2] if missing(cons_cont_bin)
+label var cons_cont "Average control at baseline"
+
+sort hh time
+gen cons_adj_bi = (cons_daily_bi/cons_cont_bin)*100
+label var cons_adj_bi "Normalized consumption"
+
+
+
+** Aggregate Social Norm (two months)
+bys hh time_bi: egen norm_bi = sum(norm)
+replace norm_bi=. if norm_bi==0
+
+** identificator of two-months duplicates
+quietly by hh time_bi:  gen dup_bi = cond(_N==1,0,_n)
+//drop if dup==2
 
 *************************************************
 ** Fixed Effects combinations with time
@@ -215,51 +317,13 @@ egen time_village = group(time village) // Time & village
 egen time_street = group(time street) // Time & Street
 egen time_ses = group(time ses) // Time & SES
 
-egen time_ses_village = group(time ses village) // Time & SES
+egen time_ses_village = group(time ses village) // Time & SES & Village
 
-egen month_year = group(month year) // month & year
-egen month_ses = group(month ses)
-egen year_ses = group(month ses)
-egen month_street = group(month street)
-
-
-
-*************************************************
-** Consumption Outliers
-*************************************************
-bys village time: egen p75=  pctile(cons_daily), p(75)
-bys village time: egen p25=  pctile(cons_daily), p(25)
-gen ric = p75 - p25
-gen riul =  p75+(1.5*ric)
-gen outlier = 1 if cons_daily > riul
-replace outlier=. if cons_daily==.
-replace outlier=0 if outlier==.
-
-
-*************************************************
-** Adjunting Consumption
-*************************************************
-
-// The water consumption is normalized by dividing it into the average post-treatment control group consumption and multiplying by 100
-
-egen cons_cont=mean(cons_daily), by(post control)
-replace cons_cont=. if control==0
-replace cons_cont=. if post==0
-replace cons_cont=. if post==.
-
-sort hh time
-gen cons_control = cons_cont
-replace cons_control = cons_cont[21] if missing(cons_cont)
-drop cons_cont
-
-gen cons_adj = (cons_daily/cons_control)*100
-
-label var cons_adj "Normalized consumption"
 
 *************************************************
 ** Saving data frame in txt file
 *************************************************
-drop id street_port  norm_cf norm cons
+drop id street_port norm_cf
 
 save "~/Documents/GitHub/spreading_the_word/data_adjusted.dta", replace
 

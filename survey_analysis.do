@@ -63,16 +63,15 @@ title(Where did you hear about messages?, pos(11) size(4)) legend(order(1 "Famil
 graph export "/Users/mrfreerider/Dropbox/Aplicaciones/Overleaf/Spreading the word Paper/survey_hear_messages.pdf", replace
 restore
 
-
 ******************************************************
 * Difference of means between groups
 ******************************************************
 
-global var image_1 image_2 net_neigh net_family net_public trust_others fair_others help_others trust_neigh h_trust_water h_trust_gov h_trust_energy h_trust_envi inter_1 inter_2 
+global var trust_others fair_others help_others trust_neigh h_trust_water h_trust_gov h_trust_energy h_trust_envi inter_1 inter_2 image_1 image_2 net_neigh net_family net_public  
 
 ** Directly vs. Indirectly
 eststo clear
-eststo DIFF: estpost ttest $var if status!=1 , by(status) unequal
+eststo DIFF: estpost ttest $var if status!=1 , by(i_treated) unequal
 
 ** Directly vs. Control
 eststo D: estpost ttest $var  if d_sample==1 , by(status) unequal
@@ -85,13 +84,21 @@ eststo I: estpost ttest $var if i_sample==1, by(status) unequal
 //estout test2 test3 test1 using "/Users/mrfreerider/Dropbox/Aplicaciones/Overleaf/Spreading the word Paper/survey_diff_means.tex", replace style(tex) cells(b(star fmt(%9.3f)) se(fmt(%9.3f) layout("(@)")))  mlabels("Directly" "Indirectly" "Difference" , span prefix(\multicolumn{@span}{c}{) suffix(}))  collabels(none)  varlabels(image_1 "Approval" image_2 "Disapproval" net_neigh "From neighbors" net_family "From relatives" net_public "At public spaces" trust_others "Trustworthy" fair_others "Fair" help_others "Helpful" trust_neigh "Reliable neighbors (\#)" h_trust_water "Water utility" h_trust_gov "Local government" h_trust_energy "Energy utility" h_trust_envi "Environmental Agency" inter_1 "My consumption affects others" inter_2 "Others consumption affects me") refcat(image_1 "\emph{Recall message:}" net_neigh "\emph{Heard about messages:}" trust_others "\emph{Others are:}"  h_trust_water "\emph{Trust in:}" inter_1 "\textit{Reciprocity:}", nolabel) prehead("\begin{tabular}{l*{@M}{rr}}" "\hline") posthead(\hline) prefoot() postfoot("\hline" "\end{tabular}")
 
 
-esttab D I DIFF using "survey_diff_means.tex", replace se compress nogaps booktabs nonumber  mtitle("Directly" "Indirectly" "Difference") coeflabels(image_1 "Approval" image_2 "Disapproval" net_neigh "From neighbors" net_family "From relatives" net_public "At public spaces" trust_others "Trustworthy" fair_others "Fair" help_others "Helpful" trust_neigh "Reliable neighbors (\#)" h_trust_water "Water utility" h_trust_gov "Local government" h_trust_energy "Energy utility" h_trust_envi "Environmental Agency" inter_1 "My consumption affects others" inter_2 "Others consumption affects me") refcat(image_1 "\emph{Recall message:}" net_neigh "\emph{Heard about messages:}" trust_others "\emph{Others are:}"  h_trust_water "\emph{Trust in:}" inter_1 "\emph{Reciprocity:}", nolabel) 
+esttab D I DIFF using "survey_diff_means.tex", replace se compress nogaps booktabs nonumber  mtitle("Directly" "Indirectly" "Difference") coeflabels(image_1 "Approval" image_2 "Disapproval" net_neigh "From neighbors" net_family "From relatives" net_public "At public spaces" trust_others "Most people can be trusted" fair_others "Most people would try to be fair" help_others "Most people would try to be helpful" trust_neigh "Reliable neighbors (\#)" h_trust_water "Water utility" h_trust_gov "Local government" h_trust_energy "Energy utility" h_trust_envi "Environmental Agency" inter_1 "My consumption affects others" inter_2 "Others consumption affects me") refcat(trust_others "\emph{Social capital:}"  h_trust_water "\emph{Trust in institutions:}" inter_1 "\emph{Reciprocity:}" image_1 "\emph{Messages:}" net_neigh "\emph{Channels:}", nolabel) 
 
+
+
+** Differences in message recalling for the same group.  
+eststo clear
+
+eststo img1: quietly reg image_1 d_treated i_treated
+eststo img2: quietly reg image_2 d_treated i_treated
+
+suest img1 img2
+lincom [img1_mean]d_treated - [img1_mean]i_treated, or
+lincom [img2_mean]d_treated - [img2_mean]i_treated, or
 
 ******************************************************
-
-
-
 
 reshape long cons above norm, i(i) j(m) string
 gen year = substr(m,1,4)
