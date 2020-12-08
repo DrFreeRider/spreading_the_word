@@ -21,6 +21,10 @@ load("simulation 50000.RData")
 # point estimates. This is our randomization inference p-value.
 
 # Aggregated model
+beta.all.coeff <- as_tibble(beta.all) 
+beta.all.coeff <- beta.all.coeff %>% 
+  drop_na()
+
 for(l in 1:2){
   all.test.stat[l,] <- sum((beta.obs.all[l]) >= (beta.all[,l]))/sims
 }
@@ -516,3 +520,26 @@ ggplot(data.all.sat.ttest, aes(x=spillover75_sim, fill = (spillover75_sim <= spi
                      breaks = seq(0, 1, 0.25),
                      limits=c(0, 1))+
   ggsave("spillover75_all_pval.pdf")
+
+
+
+
+
+
+## Matrix of saturation ()
+block_m_each <- rbind(c(sum(assign.vill=="T1")*pi[1,1],sum(assign.vill=="T1")*pi[1,2], sum(assign.vill=="T1")*pi[1,3]), 
+                      c(sum(assign.vill=="T2")*pi[2,1],round(sum(assign.vill=="T2")*pi[2,2], digits=0), round(sum(assign.vill=="T2")*pi[2,3],digits = 0)),
+                      c(sum(assign.vill=="T3")*pi[3,1],round(sum(assign.vill=="T3")*pi[3,2], digits=0), round(sum(assign.vill=="T3")*pi[3,3],digits = 0)),
+                      c(sum(assign.vill=="T4")*pi[4,1],round(sum(assign.vill=="T4")*pi[4,2], digits=0), round(sum(assign.vill=="T4")*pi[4,3],digits = 0)))
+
+# Household level randomization
+declaration <- declare_ra(blocks = assign.vill, block_prob_each = pi)
+T <- conduct_ra(declaration)
+
+head(table(T, village))
+prob_hhs <- obtain_condition_probabilities(declaration, T)
+head(table(prob_hhs,T))
+
+prob_mat <- declaration$probabilities_matrix # Matrix of assigned probabilities
+cond_prob <- obtain_condition_probabilities(declaration, T) # Conditional probabilities
+IPW_weights <- 1/(cond_prob) # Inverse probability weights
