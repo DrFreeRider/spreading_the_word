@@ -80,6 +80,7 @@ label var above "Above social norm"
 label var norm "Social norm standard"
 
 sort hh period
+egen h_v= group(village hh)
 xtset hh period
 
 *################################################
@@ -319,6 +320,19 @@ egen time_ses = group(time ses) // Time & SES
 
 egen time_ses_village = group(time ses village) // Time & SES & Village
 
+
+*************************************************
+** Probability weights
+*************************************************
+
+*SES distribution by village
+bys ses village: egen ses_n1 = count(ses)
+gen ses_n=ses_n1/26
+drop ses_n1
+bys village: egen vill_n1= count(village)
+gen vill_n=vill_n1/26
+drop vill_n1
+gen ses_p=ses_n/vill_n
 
 *************************************************
 ** Saving data frame in txt file

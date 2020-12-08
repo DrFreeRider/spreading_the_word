@@ -3,8 +3,9 @@
 # Author: Jose David Lopez Rivas
 # Plots add p-values (Randomized inference)
 #############################################
-
-load("simulation 20000.RData")
+library(ggplot2)
+setwd("~/Documents/GitHub/spreading_the_word/simulation")
+load("simulation 50000.RData")
 
 # RI p-values: this is based on the idea that the specific units in our sample that are 
 # treated are random. Thus there is some chance of a treatment-control 
@@ -14,99 +15,6 @@ load("simulation 20000.RData")
 # differences of various magnitudes under the null hypothesis that the 
 # treatment does nothing.
 
-# Plot distributions of p-value ########################################
-data.all.ttest <- data.frame(direct_sim=se.all[,1], spillover_sim=se.all[,2],
-                             direct_obs=se.obs.all[1], spillover_obs=se.obs.all[2])
-
-ggplot(data.all.ttest, aes(x=direct_sim, fill = (direct_sim <= direct_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  se.obs.all[1], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "Direct = 0 Test Statistics",
-                     breaks = seq(0, 1, 100),
-                     limits=c(1.5, 2.7))+
-  ggsave("direct_all_pval.pdf")
-
-
-ggplot(data.all.ttest, aes(x=spillover_sim, fill = (spillover_sim <= spillover_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  se.obs.all[2], linetype = 1, colour="deeppink4")
-+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "Spillover = 0 Test Statistics",
-                     breaks = seq(0, 1,100),
-                     limits=c(0, 100))+
-  ggsave("spill_all_pval.pdf")
-
-data.all.sat.ttest <- data.frame(direct25_sim=pval.all.sat[,1], direct50_sim=pval.all.sat[,2],
-                                 direct75_sim=pval.all.sat[,3], spillover25_sim=pval.all.sat[,4],
-                                 spillover50_sim=pval.all.sat[,5], spillover75_sim=pval.all.sat[,6],
-                                 direct25_obs=pval.obs.all.sat[1], direct50_obs=pval.obs.all.sat[2],
-                                 direct75_obs=pval.obs.all.sat[3], spillover25_obs=pval.obs.all.sat[4],
-                                 spillover50_obs=pval.obs.all.sat[5], spillover75_obs=pval.obs.all.sat[6])
-
-ggplot(data.all.sat.ttest, aes(x=direct25_sim, fill = (direct25_sim <= direct25_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[1], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "direct at 25% = 0 Test Statistics",
-                     breaks = seq(0, 1, 0.25),
-                     limits=c(0, 1))+
-  ggsave("direct25_all_pval.pdf")
-
-ggplot(data.all.sat.ttest, aes(x=direct50_sim, fill = (direct50_sim <= direct50_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[2], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "direct at 50% = 0 Test Statistics",
-                     breaks = seq(0, 1, 0.25),
-                     limits=c(0, 1))+
-  ggsave("direct50_all_pval.pdf")
-
-ggplot(data.all.sat.ttest, aes(x=direct75_sim, fill = (direct75_sim <= direct75_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[3], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "direct at 75% = 0 Test Statistics",
-                     breaks = seq(0, .5, 0.25),
-                     limits=c(0, 1))+
-  ggsave("direct75_all_pval.pdf")
-
-ggplot(data.all.sat.ttest, aes(x=spillover25_sim, fill = (spillover25_sim <= spillover25_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[4], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "spillover at 25% = 0 Test Statistics",
-                     breaks = seq(0, 1, 0.25),
-                     limits=c(0, 1))+
-  ggsave("spillover25_all_pval.pdf")
-
-ggplot(data.all.sat.ttest, aes(x=spillover50_sim, fill = (spillover50_sim <= spillover50_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[5], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "spillover at 50% = 0 Test Statistics",
-                     breaks = seq(0, 1, 0.25),
-                     limits=c(0, 1))+
-  ggsave("spillover50_all_pval.pdf")
-
-ggplot(data.all.sat.ttest, aes(x=spillover75_sim, fill = (spillover75_sim <= spillover75_obs))) +
-  geom_histogram(color = "white", bins = 100, alpha=0.55)+
-  geom_vline(xintercept =  pval.obs.all.sat[6], linetype = 1, colour="deeppink4")+
-  theme_classic()+
-  theme(legend.position="bottom")+
-  scale_x_continuous(name = "spillover at 75% = 0 Test Statistics",
-                     breaks = seq(0, 1, 0.25),
-                     limits=c(0, 1))+
-  ggsave("spillover75_all_pval.pdf")
-
 # Test Statistics  ###############################################
 
 # Compute the share of the fake #s that are higher in absolute value than our 
@@ -114,22 +22,22 @@ ggplot(data.all.sat.ttest, aes(x=spillover75_sim, fill = (spillover75_sim <= spi
 
 # Aggregated model
 for(l in 1:2){
-  all.test.stat[l,] <- sum(abs(beta.obs.all[l]) >= abs(beta.all[,l]))/sims
+  all.test.stat[l,] <- sum((beta.obs.all[l]) >= (beta.all[,l]))/sims
 }
 
 # Sloped Model
 for(l in 1:6){
-  all.sat.test.stat[l,] <- sum(abs(beta.obs.all.sat[l]) >= abs(beta.all.sat[,l]))/sims
+  all.sat.test.stat[l,] <- sum((beta.obs.all.sat[l]) >= (beta.all.sat[,l]))/sims
 }
 
 # Pooled model by billing frequency
 for(l in 1:4){
-  bill.test.stat[l,] <- sum(abs(beta.obs.bill[l]) >= abs(beta.bill[,l]))/sims
+  bill.test.stat[l,] <- sum((beta.obs.bill[l]) >= (beta.bill[,l]))/sims
 }
 
 # Sloped model by billing frequency
 for(l in 1:12){
-  bill.sat.test.stat[l,] <- sum(abs(beta.obs.bill.sat[l]) >= abs(beta.bill.sat[,l]))/sims
+  bill.sat.test.stat[l,] <- sum((beta.obs.bill.sat[l]) >= (beta.bill.sat[,l]))/sims
 }
 
 # Plot simulated coefficients ######################################
@@ -519,3 +427,92 @@ ggplot(data.beta.bill.sat, aes(x=spillover75_B_sim, fill=(spillover75_B_sim>=spi
         axis.text.y=element_text(colour="black", size = 9))+
   ggsave("spill_effect_75_bimonthly.pdf")
 
+# Plot distributions of p-value ########################################
+data.all.ttest <- data.frame(direct_sim=se.all[,1], spillover_sim=se.all[,2],
+                             direct_obs=se.obs.all[1], spillover_obs=se.obs.all[2])
+
+ggplot(data.all.ttest, aes(x=direct_sim, fill = (direct_sim <= direct_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  se.obs.all[1], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  ggsave("direct_all_pval.pdf")
+
+
+ggplot(data.all.ttest, aes(x=spillover_sim, fill = (spillover_sim <= spillover_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  se.obs.all[2], linetype = 1, colour="deeppink4")
++
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "Spillover = 0 Test Statistics",
+                     breaks = seq(0, 1,100),
+                     limits=c(0, 100))+
+  ggsave("spill_all_pval.pdf")
+
+data.all.sat.ttest <- data.frame(direct25_sim=pval.all.sat[,1], direct50_sim=pval.all.sat[,2],
+                                 direct75_sim=pval.all.sat[,3], spillover25_sim=pval.all.sat[,4],
+                                 spillover50_sim=pval.all.sat[,5], spillover75_sim=pval.all.sat[,6],
+                                 direct25_obs=pval.obs.all.sat[1], direct50_obs=pval.obs.all.sat[2],
+                                 direct75_obs=pval.obs.all.sat[3], spillover25_obs=pval.obs.all.sat[4],
+                                 spillover50_obs=pval.obs.all.sat[5], spillover75_obs=pval.obs.all.sat[6])
+
+ggplot(data.all.sat.ttest, aes(x=direct25_sim, fill = (direct25_sim <= direct25_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[1], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "direct at 25% = 0 Test Statistics",
+                     breaks = seq(0, 1, 0.25),
+                     limits=c(0, 1))+
+  ggsave("direct25_all_pval.pdf")
+
+ggplot(data.all.sat.ttest, aes(x=direct50_sim, fill = (direct50_sim <= direct50_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[2], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "direct at 50% = 0 Test Statistics",
+                     breaks = seq(0, 1, 0.25),
+                     limits=c(0, 1))+
+  ggsave("direct50_all_pval.pdf")
+
+ggplot(data.all.sat.ttest, aes(x=direct75_sim, fill = (direct75_sim <= direct75_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[3], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "direct at 75% = 0 Test Statistics",
+                     breaks = seq(0, .5, 0.25),
+                     limits=c(0, 1))+
+  ggsave("direct75_all_pval.pdf")
+
+ggplot(data.all.sat.ttest, aes(x=spillover25_sim, fill = (spillover25_sim <= spillover25_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[4], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "spillover at 25% = 0 Test Statistics",
+                     breaks = seq(0, 1, 0.25),
+                     limits=c(0, 1))+
+  ggsave("spillover25_all_pval.pdf")
+
+ggplot(data.all.sat.ttest, aes(x=spillover50_sim, fill = (spillover50_sim <= spillover50_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[5], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "spillover at 50% = 0 Test Statistics",
+                     breaks = seq(0, 1, 0.25),
+                     limits=c(0, 1))+
+  ggsave("spillover50_all_pval.pdf")
+
+ggplot(data.all.sat.ttest, aes(x=spillover75_sim, fill = (spillover75_sim <= spillover75_obs))) +
+  geom_histogram(color = "white", bins = 100, alpha=0.55)+
+  geom_vline(xintercept =  pval.obs.all.sat[6], linetype = 1, colour="deeppink4")+
+  theme_classic()+
+  theme(legend.position="bottom")+
+  scale_x_continuous(name = "spillover at 75% = 0 Test Statistics",
+                     breaks = seq(0, 1, 0.25),
+                     limits=c(0, 1))+
+  ggsave("spillover75_all_pval.pdf")
