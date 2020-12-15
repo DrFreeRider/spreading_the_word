@@ -5,7 +5,7 @@
 #############################################
 library(ggplot2)
 setwd("~/Documents/GitHub/spreading_the_word/simulation")
-load("simulation 50000.RData")
+load("simulation 20000.RData")
 
 # RI p-values: this is based on the idea that the specific units in our sample that are 
 # treated are random. Thus there is some chance of a treatment-control 
